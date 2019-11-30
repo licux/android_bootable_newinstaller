@@ -98,6 +98,9 @@ check_root()
 		mount -o loop /iso/$iso /mnt/iso
 		SRC=iso
 	fi
+
+	RAMDISK=ramdisk.img
+
 	if [ -e /mnt/$SRC/$RAMDISK ]; then
 		zcat /mnt/$SRC/$RAMDISK | cpio -id > /dev/null
 	elif [ -b /dev/$RAMDISK ]; then
@@ -231,7 +234,7 @@ fi
 
 [ "$SETUPWIZARD" = "0" ] && echo "ro.setupwizard.mode=DISABLED" >> default.prop
 
-[ -n "$DEBUG" ] && SWITCH=${SWITCH:-chroot}
+#[ -n "$DEBUG" ] && SWITCH=${SWITCH:-chroot}
 
 # We must disable mdev before switching to Android
 # since it conflicts with Android's init
