@@ -41,7 +41,9 @@ initrd_bin := \
 	$(initrd_dir)/init \
 	$(wildcard $(initrd_dir)/*/*)
 
-systemimg  := $(PRODUCT_OUT)/system.$(if $(MKSQUASHFS),sfs,img)
+systemimg  := $(PRODUCT_OUT)/system-qemu.img
+vendorimg  := $(PRODUCT_OUT)/vendor-qemu.img
+
 
 TARGET_INITRD_OUT := $(PRODUCT_OUT)/initrd
 INITRD_RAMDISK := $(TARGET_INITRD_OUT).img
@@ -79,7 +81,7 @@ $(boot_dir): $(shell find $(LOCAL_PATH)/boot -type f | sort -r) $(isolinux_files
 	mkdosfs -n EFI $$img; mmd -i $$img ::boot; \
 	mcopy -si $$img $@/efi ::; mdel -i $$img ::efi/boot/*.cfg
 
-BUILT_IMG := $(addprefix $(PRODUCT_OUT)/,ramdisk.img initrd.img install.img) $(systemimg)
+BUILT_IMG := $(addprefix $(PRODUCT_OUT)/,ramdisk.img initrd.img install.img) $(systemimg) $(vendorimg)
 BUILT_IMG += $(if $(TARGET_PREBUILT_KERNEL),$(TARGET_PREBUILT_KERNEL),$(PRODUCT_OUT)/kernel)
 
 GENISOIMG := $(if $(shell which xorriso 2> /dev/null),xorriso -as mkisofs,genisoimage)
@@ -111,8 +113,8 @@ usb_img: $(ISO_IMAGE)
 efi_img: $(ISO_IMAGE)
 initrd:  $(BUILT_IMG)
 
-X86EMU_EXTRA_SIZE := 100000000
-X86EMU_DISK_SIZE := $(shell echo ${BOARD_SYSTEMIMAGE_PARTITION_SIZE}+${X86EMU_EXTRA_SIZE} | bc)
+X86EMU_EXTRA_SIZE := 200000000
+X86EMU_DISK_SIZE := $(shell echo ${BOARD_SYSTEMIMAGE_PARTITION_SIZE}+${BOARD_VENDORIMAGE_PARTITION_SIZE}+${X86EMU_EXTRA_SIZE} | bc)
 X86EMU_TMP := x86emu_tmp
 
 qcow2_img: $(BUILT_IMG)
@@ -121,7 +123,8 @@ qcow2_img: $(BUILT_IMG)
 	mv $(PRODUCT_OUT)/initrd.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
 	mv $(PRODUCT_OUT)/install.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
 	mv $(PRODUCT_OUT)/ramdisk.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
-	mv $(PRODUCT_OUT)/system.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
+	mv $(PRODUCT_OUT)/system-qemu.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
+	mv $(PRODUCT_OUT)/vendor-qemu.img $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}
 	make_ext4fs -T -1 -l $(X86EMU_DISK_SIZE) $(PRODUCT_OUT)/${TARGET_PRODUCT}.img $(PRODUCT_OUT)/${X86EMU_TMP} $(PRODUCT_OUT)/${X86EMU_TMP}
 	mv $(PRODUCT_OUT)/${X86EMU_TMP}/${TARGET_PRODUCT}/*.img $(PRODUCT_OUT)/
 	qemu-img convert -c -f raw -O qcow2 $(PRODUCT_OUT)/${TARGET_PRODUCT}.img $(PRODUCT_OUT)/${TARGET_PRODUCT}-qcow2.img

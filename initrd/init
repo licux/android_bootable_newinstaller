@@ -114,9 +114,9 @@ check_root()
 			mount --move system /sfs
 			mount -o loop,noatime /sfs/system.img system
 		fi
-	elif [ -e /mnt/$SRC/system.img ]; then
+	elif [ -e /mnt/$SRC/system-qemu.img ]; then
 		remount_rw
-		mount -o loop,noatime /mnt/$SRC/system.img system
+		mount -o loop,noatime /mnt/$SRC/system-qemu.img system
 	elif [ -d /mnt/$SRC/system ]; then
 		remount_rw
 		mount --bind /mnt/$SRC/system system
@@ -130,6 +130,11 @@ check_root()
 	echo " found at $1"
 	rm /sbin/mke2fs
 	hash -r
+
+	losetup /dev/loop1 /mnt/x86emu/system-qemu.img
+	losetup /dev/loop2 /mnt/x86emu/vendor-qemu.img
+	mount -t ext4 /dev/loop1p1 /android/system
+	mount -t ext4 /dev/loop2p1 /android/vendor
 }
 
 remount_rw()
